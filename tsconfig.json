@@ -13,13 +13,7 @@
       "dom"
     ],
     "noImplicitAny": true,
-    "suppressImplicitAnyIndexErrors": true
+    "suppressImplicitAnyIndexErrors": true,
+    "types": ["node", "core-js", "jasmine"]
   }
 }
-
-/*
-Add this in compilerOptions for Windows if required.
- "typeRoots": [
-      "../node_modules/@types"
-    ]
-*/

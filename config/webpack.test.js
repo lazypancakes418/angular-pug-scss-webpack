@@ -1,32 +1,28 @@
 const webpack = require('webpack');
-const HtmlWebpackPlugin = require('html-webpack-plugin');
-const MiniCssExtractPlugin = require("mini-css-extract-plugin");
-const ProgressPlugin = require('webpack/lib/ProgressPlugin');
 const helper = require('./helper');
-const CleanWebpackPlugin = require('clean-webpack-plugin');
-const CopyWebpackPlugin = require('copy-webpack-plugin');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const ngtools = require('@ngtools/webpack');
 const autoprefixer = require('autoprefixer');
-// const HtmlWebpackPugPlugin = require('html-webpack-pug-plugin');
-// const ScriptExtHtmlWebpackPlugin = require('script-ext-html-webpack-plugin');
-// const path = require('path');
 
 module.exports = {
+  mode: 'development',
   entry: {
     'polyfills': './src/polyfills.ts',
     'app': './src/main.ts',
-    'styles': "./src/styles.scss"
+    'styles': './src/styles.scss'
   },
+
   resolve: {
     extensions: ['.ts', '.js']
   },
 
   module: {
     rules: [{
-        test: /(?:\.ngfactory\.js|\.ngstyle\.js|\.ts)$/,
-        use: ['@ngtools/webpack']
+      test: /\.ts$/,
+      loaders: [ 'ts-loader', 'angular2-template-loader']
       },
       {
-          test:  /.pug$/,
+          test: /\.pug$/,
           loaders: [
             'html-loader', {
               loader: 'pug-html-loader',
@@ -37,12 +33,19 @@ module.exports = {
           ]
       },
       {
+        enforce: 'post',
+        test: /\.ts$/,
+        loader: 'istanbul-instrumenter-loader',
+        include: helper.root('./src', 'app'),
+        exclude: /\mocks|\.spec\.ts$/
+      },
+      {
         test: /\.(png|jpe?g|gif|svg|woff|woff2|ttf|eot|ico)$/,
         loader: 'file-loader?name=assets/[name].[hash].[ext]'
       },
       {
         test: /\.(css|scss)$/,
-        exclude: [helper.root('src', 'app')],
+        exclude: [helper.root('./src', 'app')],
         use: [ MiniCssExtractPlugin.loader, {
           loader: 'css-loader',
           query: {
@@ -65,14 +68,15 @@ module.exports = {
           loader: 'sass-loader',
           options: {
             data: ``,
-            includePaths: [],
+            includePaths: [
+            ],
             sourceMap: true
           }
         }]
       },
       {
         test: /\.scss$/,
-        include: [helper.root('src', 'app')],
+        include: [helper.root('./src', 'app')],
         use: [
           {
             loader: 'css-to-string-loader'
@@ -93,7 +97,8 @@ module.exports = {
             loader: 'sass-loader',
             options: {
               data: ``,
-              includePaths: [],
+              includePaths: [
+              ],
               sourceMap: true
             }
           }
@@ -103,35 +108,21 @@ module.exports = {
   },
 
   plugins: [
-    new CleanWebpackPlugin(['dist'], {
-      root: helper.root('./'),
-      verbose: true,
-      dry: false
+    new MiniCssExtractPlugin({
+      filename: '[name].css',
     }),
-    new webpack.optimize.ModuleConcatenationPlugin(),
-    new ProgressPlugin(),
-    // Workaround for angular/angular#11580
+    new ngtools.AngularCompilerPlugin({
+      tsConfigPath: helper.root('./src/tsconfig.app.json'),
+      entryModule: helper.root('./src/app/app.module#AppModule'),
+      mainPath: 'main.ts',
+      skipCodeGeneration: true
+    }),
     new webpack.ContextReplacementPlugin(
       // The (\\|\/) piece accounts for path separators in *nix and Windows
-      /\@angular(\\|\/)core(\\|\/)esm5/,
-      helper.root('./app'), // location of your src
+      /angular(\\|\/)core(\\|\/)@angular/,
+      helper.root('./src'), // location of your src
       {} // a map of your routes
-    ),
-
-    new CopyWebpackPlugin([{
-      from: helper.root( 'src/assets/images', '**/*'),
-      to: helper.root('dist'),
-      flatten: true
-    }]),
-    new HtmlWebpackPlugin({
-      template: 'src/index.pug'
-    })
-    /** Uncomment code below if you want to you use a server template view and build an index.pug file */
-    // new HtmlWebpackPlugin({
-    //   filename: 'index.pug',
-    //   template: `${path.join(__dirname, '../server/views/index.pug')}`
-    // }),
-    // new ScriptExtHtmlWebpackPlugin(),
-    // new HtmlWebpackPugPlugin()
+    )
   ]
-};
+
+}

@@ -1,4 +1,6 @@
 {
+  "extends": "tslint-config-airbnb",
+  "exclude" : ["**.spec.ts"],
   "rulesDirectory": [
     "node_modules/codelyzer"
   ],
